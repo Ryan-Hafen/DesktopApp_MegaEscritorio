@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
+using System.Reflection;
 
 
 namespace MegaEscritorio
@@ -125,7 +126,10 @@ namespace MegaEscritorio
         }
         public static int getRushOrderCost(int surfaceAreaSelection, int rushOrderSelection)
         {
-            string[] rushOrderLine = File.ReadAllLines(@"\\HafenCloud\Ryan\School\CIT 301C\Wk03\rushOrder.txt");
+            string executableLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string txtLocation = Path.Combine(executableLocation, "rushOrder.txt");
+            string[] rushOrderLine = File.ReadAllLines(@txtLocation);
+
             int line = 0;
             int[,] RushOrderCostArray = new int[3, 3];
             for (int i = 0; i < 3; i++)
@@ -194,8 +198,9 @@ namespace MegaEscritorio
         }
         static void writeJsonFile(int rushOrderCost, int drawerCost, int surfaceCost, int deskBaseCost, int finalCost)
         {
-            string path = @"\\HafenCloud\Ryan\School\CIT 301C\Wk03\orderJson.txt";
-
+            
+            string executableLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string path = Path.Combine(executableLocation, "orderJson.txt");
             // This text is added only once to the file.
             if (!File.Exists(path))
             {
