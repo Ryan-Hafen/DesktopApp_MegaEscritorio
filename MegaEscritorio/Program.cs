@@ -1,229 +1,367 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
-using System.Reflection;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace MegaEscritorio
 {
+    public interface deskOrder
+    {
+        void saveOrderInfo(Desk desk);
+        int CalcRushOrder(int[,] rushOrderPricing, int rushOrder, int deskArea);
+        int CalcMaterialPrice(SurfaceMaterial material);
+        int CalcAreaPrice(int deskArea);
+        void GetRushOrder(int[,] array);
+        int GetIntegerOption(string prompt, int opt1, int opt2, int opt3, int opt4);
+        SurfaceMaterial GetSurfaceType(string prompt);
+        string GetStringOption(string prompt, string opt1, string opt2);
+        int GetIntegerInRange(string prompt, int minValue, int maxValue);
+        string GetInput(string prompt);
+    }
+    public enum SurfaceMaterial
+    {
+        None,
+        Oak,
+        Laminate,
+        Pine,
+        Marble,
+        Walnut,
+        Metal
+    };
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("");
-            Console.WriteLine("Pricing Structure");
-            Console.WriteLine("");
-            Console.WriteLine("===============================================================================");
-            Console.WriteLine("");
-            Console.WriteLine(String.Format("{0,35} | {1,-5} | {2,-10}", "Base Desk Price", "$200", "each"));
-            Console.WriteLine(String.Format("{0,35} | {1,-5} | {2,-10}", "Desktop Surface Area > 1000 in\xB2", "$5", "per in\xB2"));
-            Console.WriteLine(String.Format("{0,35} | {1,-5} | {2,-10}", "Drawers", "$50", "per drawer"));
-            Console.WriteLine("");
-            Console.WriteLine("-------------------------------------------------------------------------------");
-            Console.WriteLine("Surface Material");
-            Console.WriteLine("-------------------------------------------------------------------------------");
-            Console.WriteLine(String.Format("{0,35} | {1,-5}", "Oak", "$200"));
-            Console.WriteLine(String.Format("{0,35} | {1,-5}", "Laminate", "$100"));
-            Console.WriteLine(string.Format("{0,35} | {1,-5}", "Pine", "$20"));
-            Console.WriteLine("===============================================================================");
-            Console.WriteLine("");
-            Console.WriteLine(String.Format("{0,-10} | {1,-6}   {2,-15}   {3,-6}", "Rush Order", "", "Size of Desk (in\xB2)", ""));
-            Console.WriteLine(String.Format("{0,-10} | {1,-6} | {2,-15} | {3,-6}", "", "< 1000", "1000 to 1999", "2000+"));
-            Console.WriteLine(String.Format("{0,-10} | {1,-6} | {2,-15} | {3,-6}", "3 Day", "$ ", "$ ", "$ "));
-            Console.WriteLine(String.Format("{0,-10} | {1,-6} | {2,-15} | {3,-6}", "5 Day", "$ ", "$ ", "$ "));
-            Console.WriteLine(String.Format("{0,-10} | {1,-6} | {2,-15} | {3,-6}", "7 Day", "$ ", "$ ", "$ "));
-            Console.WriteLine("");
-            Console.WriteLine("");
-
-            ///Prompt User
-            Console.WriteLine("Enter desk length in inches: ");
-            int length = Int32.Parse(Console.ReadLine());
-
-            Console.WriteLine("Enter desk width in inches: ");
-            int width = Int32.Parse(Console.ReadLine());
-
-            Console.WriteLine("Enter the number of drawers: ");
-            int drawerNum = Int32.Parse(Console.ReadLine());
-
-            Console.WriteLine("Enter material:");
-            string material = Console.ReadLine();
-
-            Console.WriteLine("Enter Rush Order in days (3,5,7)");
-            int rushOrderPrompt = Int32.Parse(Console.ReadLine());
-
-            ///Calculate Surface Area
-            int surfaceArea = getDeskSurfaceArea(length, width);
-
-            ///get Rush Order Cost
-            int surfaceAreaSelection = getSurfaceRange(surfaceArea);
-            int rushOrderSelection = getRushOrder(rushOrderPrompt);
-            int rushOrderCost = getRushOrderCost(surfaceAreaSelection, rushOrderSelection);
-
-            ///Get Drawer Cost
-            int drawerCost = getDrawerCost(drawerNum);
-
-            ///Get Surface Material Cost
-            int surfaceCost = getSurfaceMaterialCost(material);
-
-            ///Get Desk Base Price
-            int deskBaseCost = getSufaceAreaCost(surfaceArea);
-
-            ///Calculate Final Cost
-            int finalCost = getFinalCost(rushOrderCost, drawerCost, surfaceCost, deskBaseCost);
-
-            Console.WriteLine(String.Format("Here is your order confirmation:"));
-            Console.WriteLine(String.Format("Base price of desk = " + deskBaseCost));
-            Console.WriteLine(String.Format("Cost of drawers = " + drawerCost));
-            Console.WriteLine(String.Format("Suface material cost = " + surfaceCost));
-            Console.WriteLine(String.Format("rush order cost = " + rushOrderCost));
-            Console.WriteLine(String.Format("Final Price = " + finalCost));
-
-            ///Write Json File
-            writeJsonFile(rushOrderCost, drawerCost, surfaceCost, deskBaseCost, finalCost);
-            
-
-            Console.WriteLine(String.Format("Press any key to exit."));
-            Console.ReadKey();
-            
-        }
-
-        ///Get the Rush Order
-        public static int getSurfaceRange(int surfaceArea)
-        {
-            int sa;
-            if (surfaceArea > 0 && surfaceArea < 1000)
+            string endOrder = null;
+            do
             {
-                sa = 0;
-            }
-            else if (surfaceArea >= 1000 && surfaceArea < 2000)
-            {
-                sa = 1;
-            }
-            else
-            {
-                sa = 2;
-            }
-            return sa;
-        }
-        public static int getRushOrder(int rushOrderPrompt)
-        {
-            int rushOrderDay;
 
-            if (rushOrderPrompt == 3)
-            {
-                 rushOrderDay = 0;
-            }
-            else if (rushOrderPrompt == 5)
-            {
-                 rushOrderDay = 1;
-            }
-            else
-            {
-                 rushOrderDay = 2;
-            }
-            return rushOrderDay;
 
-        }
-        public static int getRushOrderCost(int surfaceAreaSelection, int rushOrderSelection)
-        {
-            string executableLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string txtLocation = Path.Combine(executableLocation, "rushOrder.txt");
-            string[] rushOrderLine = File.ReadAllLines(@txtLocation);
 
-            int line = 0;
-            int[,] RushOrderCostArray = new int[3, 3];
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
+                Console.WriteLine(@"
+                ************************************************
+                Welcome to the Mega Escritorio custom desk 
+                application! Please enter the prompts below in 
+                order to receive your personalized price.
+                ************************************************");
+                //variables to be used
+                Desk newDeskQuote = new Desk();
+                DeskOrderMethods d = new DeskOrderMethods();
+
+                //get user input
+                newDeskQuote.deskWidth = d.GetIntegerInRange("Type the desk width in inches:", 1, 500);
+                newDeskQuote.deskLength = d.GetIntegerInRange("Type the desk length in inches:", 1, 500);
+                newDeskQuote.noOfDrawers = d.GetIntegerInRange("Type the number of drawers (max 7):", 0, 7);
+                newDeskQuote.deskTopType = d.GetSurfaceType("Select surface material from the following: "
+                    + "Oak, Laminate, Pine, Marble, Walnut, or Metal");
+                newDeskQuote.rushOrder = d.GetIntegerOption("Normal production time is 14 days."
+                    + " If you would like to rush your order, "
+                    + "please enter 3, 5, or 7 to speed up production time for an extra fee."
+                    + " enter 0 if you do not wish to rush this order.", 3, 5, 7, 0);
+
+
+                int deskArea = newDeskQuote.deskWidth * newDeskQuote.deskLength;
+                int areaPrice = d.CalcAreaPrice(deskArea);
+
+
+                int drawerPrice = 50 * newDeskQuote.noOfDrawers;
+
+
+                int materialPrice = d.CalcMaterialPrice(newDeskQuote.deskTopType);
+
+
+                int[,] rushOrderPricing = new int[3, 3];
+                d.GetRushOrder(rushOrderPricing);
+
+
+                int rushOrderPrice = d.CalcRushOrder(rushOrderPricing, newDeskQuote.rushOrder, deskArea);
+
+
+                newDeskQuote.priceEstimate = areaPrice + drawerPrice + materialPrice + rushOrderPrice;
+
+                Console.WriteLine("The total cost of a " + newDeskQuote.deskWidth + "x" +
+                    newDeskQuote.deskLength + " " + newDeskQuote.deskTopType + " desk with " + newDeskQuote.noOfDrawers
+                    + " drawers and a " + newDeskQuote.rushOrder + " day production time is $"
+                    + newDeskQuote.priceEstimate);
+
+
+                string saveOrder = d.GetStringOption("Would you like to save this order? Y/N?", "Y", "N");
+                if (saveOrder == "Y")
                 {
-                    RushOrderCostArray[i, j] = int.Parse(rushOrderLine[line]);
-                    line++;
+                    d.saveOrderInfo(newDeskQuote);
                 }
-            }
-            return RushOrderCostArray[surfaceAreaSelection, rushOrderSelection];
+                endOrder = d.GetStringOption("Thank you for using our application. Please select 'E' to exit, or 'N' to start over.", "E", "N");
+            } while (endOrder == "N");
+
         }
 
-        ///Calculate the surface area
-        public static int getDeskSurfaceArea(int length, int width)
-        {
-            int surfaceArea = length * width;
-            return surfaceArea;
-        }
 
-        ///Calculate the drawer Cost
-        public static int getDrawerCost(int drawerNum)
-        {
-            int drawerCost = drawerNum * 50;
-            return drawerCost;
-        }
 
-        ///Calculate to const of 
-        public static int getSurfaceMaterialCost(string material)
+
+    }
+    public class Desk
+    {
+        public int deskWidth { get; set; }
+        public int deskLength { get; set; }
+        public int noOfDrawers { get; set; }
+        public int rushOrder { get; set; }
+        public SurfaceMaterial deskTopType { get; set; }
+        public int priceEstimate { get; set; }
+
+
+    }
+    public class DeskOrderMethods : deskOrder
+    {
+
+        public void saveOrderInfo(Desk orderInfo)
         {
-            int materialCost;
-            if (material == "Oak")
+            bool printCheck = true;
+            string orderName = GetInput("Please enter the name you would like to save your order under.");
+            try
             {
-                 materialCost = 200;
+
+
+                string deskOrderInfo = JsonConvert.SerializeObject(orderInfo, Formatting.Indented);
+                string[] stringArray = new string[1] { deskOrderInfo };
+
+
+                File.WriteAllLines("DeskQuote_" + orderName + ".txt", stringArray);
             }
-            else if (material == "Laminate")
+            catch (Exception e)
             {
-                 materialCost = 100;
+                Console.WriteLine(e.Message);
+                printCheck = false;
+
             }
+            if (printCheck != false)
+                Console.WriteLine("Your order has been saved.");
+        }
+
+
+        public int CalcRushOrder(int[,] rushOrderPricing, int rushOrder, int deskArea)
+        {
+
+            int rushCost = 0;
+            int i = 0, j = 0;
+
+            if (rushOrder == 0)
+                return 0;
             else
             {
-                 materialCost = 50;
+
+                if (deskArea <= 1000)
+                    j = 0;
+                else if ((deskArea > 1000) && (deskArea < 2000))
+                    j = 1;
+                else
+                    j = 2;
+
+                switch (rushOrder)
+                {
+                    case 3:
+                        i = 0;
+                        break;
+                    case 5:
+                        i = 1;
+                        break;
+                    case 7:
+                        i = 2;
+                        break;
+                }
+
+                rushCost = rushOrderPricing[i, j];
+
+                return rushCost;
             }
-            return materialCost;
 
         }
-        /// calculate Surface Area Cost
-        public static int getSufaceAreaCost(int surfaceArea)
+
+
+        public int CalcMaterialPrice(SurfaceMaterial material)
         {
-            int surfaceAreaCost;
-            if (surfaceArea <= 1000)
+            int price = 0;
+            switch (material)
             {
-                surfaceAreaCost = 200;
+                case SurfaceMaterial.Oak:
+                    price = 200;
+                    break;
+                case SurfaceMaterial.Laminate:
+                    price = 100;
+                    break;
+                case SurfaceMaterial.Pine:
+                    price = 50;
+                    break;
+                case SurfaceMaterial.Marble:
+                    price = 500;
+                    break;
+                case SurfaceMaterial.Walnut:
+                    price = 250;
+                    break;
+                case SurfaceMaterial.Metal:
+                    price = 300;
+                    break;
+                default:
+                    Console.WriteLine("Invalid material choice");
+                    return 0;
             }
-            else 
-            {
-                surfaceAreaCost = ((surfaceArea-1000)*5)+200;
-            }
-            return surfaceAreaCost;
+            return price;
         }
-        /// calculate Final Cost
-        public static int getFinalCost(int rushOrderCost, int drawerCost, int surfaceCost, int deskBaseCost)
+
+
+        public int CalcAreaPrice(int deskArea)
         {
-            int finalCost = rushOrderCost + drawerCost + surfaceCost + deskBaseCost;
-            return finalCost;
-        }
-        static void writeJsonFile(int rushOrderCost, int drawerCost, int surfaceCost, int deskBaseCost, int finalCost)
-        {
-            
-            string executableLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string path = Path.Combine(executableLocation, "orderJson.txt");
-            // This text is added only once to the file.
-            if (!File.Exists(path))
+            int price = 0;
+            if (deskArea > 1000)
             {
-                // Create a file to write to.
-                JArray arrayJson = new JArray();
-                arrayJson.Add("deskBaseCost: " + deskBaseCost);
-                arrayJson.Add("drawerCost: " + drawerCost);
-                arrayJson.Add("SufaceCost: " + surfaceCost);
-                arrayJson.Add("rushOrderCost: " + rushOrderCost);
-                arrayJson.Add("FinalCost: " + finalCost);
-
-                JObject o = new JObject();
-                o["orderArray"] = arrayJson;
-
-                string json = o.ToString();
-
-                File.WriteAllText(path, json);
+                price = 5 * (deskArea - 1000) + 200;
             }
-
-            // Open the file to read from.
-            string readText = File.ReadAllText(path);
-            Console.WriteLine(readText);
+            else
+                price = 200;
+            return price;
         }
 
+
+        public void GetRushOrder(int[,] array)
+        {
+            try
+            {
+                string[] lines = File.ReadAllLines("rushOrderPrices.txt");
+                int count = 0;
+                for (int i = 0; i < array.GetLength(0); i++)
+                {
+                    for (int j = 0; j < array.GetLength(1); j++)
+                    {
+                        array[i, j] = int.Parse(lines[count]);
+                        count++;
+                    }
+                }
+
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+
+        public int GetIntegerOption(string prompt, int opt1, int opt2, int opt3, int opt4)
+        {
+            int chosenNumber;
+            do
+            {
+                chosenNumber = int.Parse(GetInput(prompt));
+
+                if ((chosenNumber != opt1) && (chosenNumber != opt2) && (chosenNumber != opt3) && (chosenNumber != opt4))
+                {
+                    Console.WriteLine("That is not an option. "
+                        + "Please select " + opt1 + " or " + opt2 + " or " + opt3 + " or " + opt4 + ".");
+                }
+            } while ((chosenNumber != opt1) && (chosenNumber != opt2) && (chosenNumber != opt3) && (chosenNumber != opt4));
+            return chosenNumber;
+        }
+
+
+        public SurfaceMaterial GetSurfaceType(string prompt)
+        {
+            string materialChoice;
+            SurfaceMaterial deskTop = SurfaceMaterial.None;
+            do
+            {
+                materialChoice = GetInput(prompt);
+                materialChoice.ToLower();
+
+                switch (materialChoice)
+                {
+                    case "oak":
+                        deskTop = SurfaceMaterial.Oak;
+                        break;
+                    case "laminate":
+                        deskTop = SurfaceMaterial.Laminate;
+                        break;
+                    case "pine":
+                        deskTop = SurfaceMaterial.Pine;
+                        break;
+                    case "marble":
+                        deskTop = SurfaceMaterial.Marble;
+                        break;
+                    case "walnut":
+                        deskTop = SurfaceMaterial.Walnut;
+                        break;
+                    case "metal":
+                        deskTop = SurfaceMaterial.Metal;
+                        break;
+                    default:
+                        Console.WriteLine("Invalid selection. " + prompt);
+                        break;
+                }
+
+            } while (deskTop == SurfaceMaterial.None);
+            return deskTop;
+        }
+
+
+        public string GetStringOption(string prompt, string opt1, string opt2)
+        {
+            string finalValue = null;
+            string stringInput = null;
+            do
+            {
+                stringInput = GetInput(prompt);
+
+                if (stringInput.Equals(opt1, StringComparison.OrdinalIgnoreCase))
+                    finalValue = opt1;
+                else if (stringInput.Equals(opt2, StringComparison.OrdinalIgnoreCase))
+                    finalValue = opt2;
+                else
+                {
+                    Console.WriteLine("Please select " + opt1 + " or " + opt2 + ".");
+                }
+            } while (finalValue == null);
+            return finalValue;
+        }
+
+
+        public int GetIntegerInRange(string prompt, int minValue, int maxValue)
+        {
+            int number = 0;
+            do
+            {
+                number = int.Parse(GetInput(prompt));
+
+                if ((number < minValue) || (number > maxValue))
+                {
+                    Console.WriteLine("That is not a valid size of a desk. "
+                        + "Please enter a number between " + minValue + " and " + maxValue + ".");
+                }
+            } while ((number < minValue) || (number > maxValue));
+            return number;
+
+        }
+
+
+        public string GetInput(string prompt)
+        {
+            string finalValue = null;
+            do
+            {
+                try
+                {
+                    Console.WriteLine(prompt);
+                    finalValue = Console.ReadLine();
+                    finalValue = finalValue.Trim();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+
+            } while ((finalValue == null));
+            return finalValue;
+        }
     }
 }
